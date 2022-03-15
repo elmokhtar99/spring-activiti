@@ -3,22 +3,38 @@ package com.example.activiti.service;
 
 import com.example.activiti.model.ProcessModel;
 import com.example.activiti.model.TaskModel;
+import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
+import org.activiti.api.process.runtime.ProcessRuntime;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+import org.activiti.engine.impl.RuntimeServiceImpl;
+import org.activiti.engine.impl.util.json.JSONArray;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
+import org.apache.catalina.security.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class MyService {
+
     @Autowired
     private TaskService taskService;
+
     @Autowired
     private RuntimeService runtimeService;
+
+    private RuntimeServiceImpl runtimeServiceImpl;
+
 
     public String startProcess(String name){
         Map<String,Object> variable=new HashMap<>();
@@ -110,25 +126,26 @@ public class MyService {
         return "unclaiming the task : "+taskId;
     }
 
-    public List<Map<String,Object>> getActiveProcess(){
-        List<ProcessInstance> processInstances=runtimeService.createProcessInstanceQuery().active().list();
-        List<Map<String,Object>> processes=new ArrayList<>();
-        for(ProcessInstance pi:processInstances){
-            Map<String,Object> processInstance=new HashMap<>();
-            processInstance.put("id",pi.getProcessInstanceId());
-            processInstance.put("name",pi.getName());
-            processInstance.put("variables",pi.getProcessVariables());
-            processInstance.put("is_suspended",pi.isSuspended());
-            processes.add(processInstance);
-
-        }
-        return processes;
-    }
 
     public String suspendProcess(String processInstanceId){
-        runtimeService.createProcessInstanceQuery().suspended().processInstanceId(processInstanceId);
+        runtimeService.suspendProcessInstanceById(processInstanceId);
         return "the process instance with the given id is suspended";
     }
+
+    public String resumeProcess(String processInstanceId){
+//        runtimeService.activateProcessInstanceById(processInstanceId);
+
+//        runtimeService.activateProcessInstanceById(processInstanceId);
+        // TODO FIXE MEEEEEEEEEEEEEE
+        ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId)
+                .singleResult();
+
+        if (processInstance.isSuspended()) {
+            runtimeService.activateProcessInstanceById(processInstanceId);
+        }
+        return "the process instance with the given id is resumed";
+    }
+
 
     // delete = finish
     public String deleteProcess(String processInstanceId, String deleteReason){
@@ -154,11 +171,18 @@ public class MyService {
     }
 
     public String getList(String processInstanceId){
-
         List<Task> taskInstances = taskService.createTaskQuery().processInstanceId(processInstanceId).active().list();
         return "";
     }
 
+    //Marks that the assignee is done with this task and that it can be send back to the owner.
+    public TaskModel resolveTask(String taskId){
+        Task task=taskService.createTaskQuery().taskId(taskId).singleResult();
+        System.out.println("The owner : "+task.getOwner());
+        taskService.resolveTask(taskId);
+        TaskModel taskModel=new TaskModel(task.getId(),task.getName(),task.getProcessInstanceId(),task.getAssignee());
+        return taskModel;
+    }
 
 
 }

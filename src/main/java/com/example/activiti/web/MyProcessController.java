@@ -12,9 +12,8 @@ import org.activiti.engine.TaskService;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -94,6 +93,8 @@ public class MyProcessController {
         return service.getProcesses();
     }
 
+
+    // process with ProcessModel :
     @RequestMapping("/v1/processes")
     public List<ProcessModel> processes(){
         return service.suspendedProcesses();
@@ -101,7 +102,6 @@ public class MyProcessController {
 
     @RequestMapping("/suspended-processes")
     public List<Map<String,Object>> getSuspendedProcesses(){
-
         return service.getSuspendedProcesses();
     }
 
@@ -109,7 +109,7 @@ public class MyProcessController {
     public List<Map<String,Object>> tasks(@RequestParam String proccessInstanceId){
         return service.tasks(proccessInstanceId);
     }
-
+    // process with TaskModel :
     @RequestMapping("/v1/tasks")
     public List<TaskModel> getTasks(@RequestParam String proccessInstanceId){
         return service.getTasks(proccessInstanceId);
@@ -122,19 +122,22 @@ public class MyProcessController {
 
     @RequestMapping("/unclaim")
     public String unclaim(@RequestParam String taskId){
-
         return service.unclaimTask(taskId);
     }
-/////////////////////////////////// Could not write JSON: lazy loading outside command context
-    @RequestMapping("/active")
-    public List<Map<String,Object>> getActiveProcess(){
 
+   /* @RequestMapping("/active")
+    public List<Map<String,Object>> getActiveProcess(){
         return service.getActiveProcess();
     }
-
+*/
     @RequestMapping("/suspend")
     public String suspendProcess(@RequestParam String processInstanceId){
         return service.suspendProcess(processInstanceId);
+    }
+
+    @RequestMapping("/activate")
+    public String resumedProcess(@RequestParam String processInstanceId){
+        return service.resumeProcess(processInstanceId);
     }
 
     @RequestMapping("/delete")
@@ -144,7 +147,6 @@ public class MyProcessController {
 
     @RequestMapping("/complete")
     public String completeTask(@RequestParam String taskId){
-
         return service.completeTask(taskId);
     }
 
@@ -157,5 +159,11 @@ public class MyProcessController {
     public String suspendTask(@RequestParam String taskId){
         return service.suspendTask(taskId);
     }
+
+    @RequestMapping("/resolveTask")
+    public TaskModel resolveTask(@RequestParam String taskId){
+        return service.resolveTask(taskId);
+    }
+
 
 }
